@@ -37,7 +37,9 @@ gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
 const resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
 const dprUniformLocation = gl.getUniformLocation(program, 'u_screen_dpr');
+const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
 
+const startTime = Date.now();
 function draw() {
   if (!gl) return;
   // Set up clear viewport
@@ -51,6 +53,7 @@ function draw() {
   // Bind uniforms
   gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
   gl.uniform1f(dprUniformLocation, window.devicePixelRatio ?? 1);
+  gl.uniform1f(timeUniformLocation, (Date.now() - startTime) / 1000);
   // Draw call
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
