@@ -10,7 +10,7 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
   return null;
 }
 
-export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader | null, fragmentShader: WebGLShader | null) {
+export function linkProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader | null, fragmentShader: WebGLShader | null) {
   if (!vertexShader || !fragmentShader) throw new Error('Can’t create program with null shaders');
   const program = gl.createProgram();
   if (!program) throw new Error('Can’t create program');
@@ -23,4 +23,10 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
   console.log(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
   return null;
+}
+
+export function createProgram(gl: WebGL2RenderingContext, vertexShaderSrc: string, fragmentShaderSrc: string) {
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
+  return linkProgram(gl, vertexShader, fragmentShader);
 }

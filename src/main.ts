@@ -1,6 +1,6 @@
 import './style.scss';
 
-import { createProgram, createShader } from './gl-utils';
+import { createProgram } from './shaders';
 import vertexShaderSrc from './shaders/vertex.glsl';
 import fragmentShaderSrc from './shaders/fragment.glsl';
 
@@ -18,9 +18,7 @@ const gl = canvas.getContext('webgl2');
 if (!gl) throw new Error('Can’t get gl context');
 
 // Compile shaders and create program
-const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
-const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
-const program = createProgram(gl, vertexShader, fragmentShader);
+const program = createProgram(gl, vertexShaderSrc, fragmentShaderSrc);
 if (!program) throw new Error('Program was null');
 
 // Set up geometry
