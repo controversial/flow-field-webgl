@@ -1,3 +1,5 @@
+import Stats from 'stats.js';
+
 export interface SceneContext {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
@@ -29,6 +31,7 @@ export default class Renderer {
   startTime?: DOMHighResTimeStamp;
   eventListeners: EventListenersRecord = {};
   resizeListeners: ((ctx: SceneContext) => void)[] = [];
+  stats: Stats;
 
 
   // Rendering is split into “steps”
@@ -42,6 +45,7 @@ export default class Renderer {
     this.updateCanvasSize();
     this.resizeObserver = new ResizeObserver(() => this.updateCanvasSize());
     this.resizeObserver.observe(this.canvas);
+    this.stats = new Stats();
   }
 
 
@@ -103,7 +107,11 @@ export default class Renderer {
     const frame = (time: DOMHighResTimeStamp) => {
       const delta = time - previousTime;
       previousTime = time;
+
+      this.stats.begin();
       this.draw(delta);
+      this.stats.end();
+
       this.raf = requestAnimationFrame(frame);
     };
     this.raf = requestAnimationFrame(frame);
