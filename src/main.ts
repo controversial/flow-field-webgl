@@ -3,13 +3,14 @@ import './style.scss';
 import Renderer from './renderer';
 import { canvas, gl } from './context';
 
-import { draw as renderNoise } from './passes/noise';
+import drawShaderFullscreen from './utils/debug-shader-view';
+import noiseFragmentSrc from './shaders/noise-frag.glsl';
 
 const renderer = new Renderer(canvas, gl);
 
 renderer.start();
 
-renderer.addRenderStep(renderNoise);
+renderer.addRenderStep(drawShaderFullscreen(noiseFragmentSrc));
 
 // Vite cleanup
 if (import.meta.hot) {

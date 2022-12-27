@@ -28,5 +28,7 @@ export function linkProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShade
 export function createProgram(gl: WebGL2RenderingContext, vertexShaderSrc: string, fragmentShaderSrc: string) {
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
-  return linkProgram(gl, vertexShader, fragmentShader);
+  const program = linkProgram(gl, vertexShader, fragmentShader);
+  if (!program) throw new Error('Failed to create program');
+  return program;
 }
