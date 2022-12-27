@@ -19,7 +19,7 @@ void main() {
   xy += vec2(17, 20);
 
   // Parameters for noise
-  const float frequency = 3.0; // scale
+  const float frequency = 1.0; // scale
   const float amplitude = 0.5;
   const int harmonics = 4; // number of layers to stack
   const float harmonic_spread = 1.5; // difference in frequency between harmonics
