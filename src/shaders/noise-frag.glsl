@@ -1,6 +1,7 @@
 #version 300 es
 
 precision highp float;
+precision highp int;
 
 #include "./lygia/generative/cnoise.glsl"
 
@@ -8,7 +9,7 @@ uniform vec2 u_resolution;
 uniform float u_screen_dpr;
 uniform float u_time;
 
-out vec4 color;
+out uint final_value;
 
 void main() {
   vec2 coord = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
@@ -36,5 +37,5 @@ void main() {
     this_amplitude *= harmonic_gain;
   }
 
-  color = vec4(value, value, value, 1);
+  final_value = clamp(uint(floor(clamp(value, 0., 1.) * 65536.)), 0u, 65535u);
 }

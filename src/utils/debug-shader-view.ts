@@ -3,6 +3,7 @@ import { createProgram } from './shader';
 import { gl } from '../context';
 import type { SceneContext } from '../renderer';
 
+
 export default function drawShaderFullscreen(
   fragmentShaderSrc: string,
   uniforms: Record<string, number[] | number | WebGLTexture> = {},
@@ -55,6 +56,7 @@ export default function drawShaderFullscreen(
     });
 
     // Draw
+    gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 }
