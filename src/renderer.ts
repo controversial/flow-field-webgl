@@ -3,6 +3,7 @@ export interface SceneContext {
   gl: WebGL2RenderingContext;
   size: [number, number],
   time: number,
+  dpr: number,
 }
 
 
@@ -63,6 +64,7 @@ export default class Renderer {
       gl: this.gl,
       size: [this.width, this.height],
       time: this.startTime ? (performance.now() - this.startTime) : -1,
+      dpr: window.devicePixelRatio ?? 1,
     };
   }
 
