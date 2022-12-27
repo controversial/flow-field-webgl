@@ -6,7 +6,7 @@ const maybeGl = maybeCanvas.getContext('webgl2', {
   depth: false,
   stencil: false,
   alpha: true,
-  premultipliedAlpha: false,
+  premultipliedAlpha: true,
 });
 if (!maybeGl) throw new Error('Failed to get WebGL2 context');
 

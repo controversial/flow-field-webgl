@@ -6,11 +6,15 @@ import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
 import noiseFragmentSrc from '../shaders/noise-frag.glsl';
 import traceFragmentSrc from '../shaders/line-trace-frag.glsl';
 
+import linesVertexSrc from '../shaders/lines-vert.glsl';
+import linesFragmentSrc from '../shaders/lines-frag.glsl';
+
+
 
 /** How many lines to render? needs to be capped at GL_MAX_TEXTURE_SIZE */
-const NUM_LINES = 500;
+const NUM_LINES = 2048;
 /** How many “points” in each line? needs to be capped as well */
-const NUM_LINE_POINTS = 501;
+const NUM_LINE_POINTS = 40;
 /** How far across the noise field to move at each step? in dpr-normalized pixels */
 const STEP_SIZE = 2;
 /** Line width in dpr-normalized pixels */
@@ -54,6 +58,84 @@ gl.bindVertexArray(fullscreenVao);
 if (noiseProgramLocations.aPosition !== traceProgramLocations.aPosition) throw new Error('attribute locations don’t match in noise/trace shaders');
 gl.enableVertexAttribArray(noiseProgramLocations.aPosition);
 gl.vertexAttribPointer(noiseProgramLocations.aPosition, 2, gl.FLOAT, false, 0, 0);
+
+
+
+
+const linesProgram = createProgram(gl, linesVertexSrc, linesFragmentSrc);
+const linesProgramLocations = {
+  // which line instance this point belongs to comes from gl_InstanceID
+  aLinePoint: gl.getAttribLocation(linesProgram, 'a_line_point'), // which “line point” this point in geometry belongs to
+  aNormal: gl.getAttribLocation(linesProgram, 'a_normal'), // is this the left or right side of the line?
+
+  uPositionsTexture: gl.getUniformLocation(linesProgram, 'u_positions_texture'),
+  uResolution: gl.getUniformLocation(linesProgram, 'u_resolution'),
+  uScreenDpr: gl.getUniformLocation(linesProgram, 'u_screen_dpr'),
+  uLineWidth: gl.getUniformLocation(linesProgram, 'u_line_width'),
+  uLineFeatherWidth: gl.getUniformLocation(linesProgram, 'u_line_feather_width'),
+  uLineAlpha: gl.getUniformLocation(linesProgram, 'u_line_alpha'),
+  uNumLinePoints: gl.getUniformLocation(linesProgram, 'u_num_line_points'),
+};
+
+// Line VAO is for lines program
+const lineVao = gl.createVertexArray();
+if (!lineVao) throw new Error('couldn’t create VAO');
+
+// In order to make thick lines, we need 2 points of geometry per “line point.”
+// For each point, we need to encode which “line point” it corresponds to, and whether it’s the
+// “left” or the “right” side of the line.
+const dataPerPoint = 2 * (1 + 1);
+const linePoints = new Uint16Array(NUM_LINE_POINTS * dataPerPoint);
+for (let i = 0; i < NUM_LINE_POINTS; i++) {
+  // First point
+  linePoints[i * dataPerPoint + 0] = i; // This point belongs to the ith “line point”
+  linePoints[i * dataPerPoint + 1] = -1; // First point has -1 “normal” indicating the left side of the line
+  // Second point
+  linePoints[i * dataPerPoint + 2] = i;
+  linePoints[i * dataPerPoint + 3] = 1; // Second point has +1 “normal” indicating the right side of the line
+}
+
+// 2 triangles (6 points) for each “step” between line points
+const lineIndices = new Int16Array((NUM_LINE_POINTS - 1) * 6);
+for (let i = 0; i < NUM_LINE_POINTS - 1; i++) {
+  const bottomLeft = i * 2 + 0;
+  const bottomRight = i * 2 + 1;
+  const topLeft = i * 2 + 2;
+  const topRight = i * 2 + 3;
+  // Triangle 1: bottomRight/topRight/bottomLeft
+  lineIndices[i * 6 + 0] = bottomRight;
+  lineIndices[i * 6 + 1] = topRight;
+  lineIndices[i * 6 + 2] = bottomLeft;
+  // Triangle 2: bottomLeft/topRight/topLeft
+  lineIndices[i * 6 + 3] = bottomLeft;
+  lineIndices[i * 6 + 4] = topRight;
+  lineIndices[i * 6 + 5] = topLeft;
+}
+
+// Fill lines VAO
+gl.bindVertexArray(lineVao);
+const lineVertexBuffer = gl.createBuffer();
+if (!lineVertexBuffer) throw new Error('couldn’t create vertex buffer');
+// Bind gl.ARRAY_BUFFER to our constructed data
+gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, linePoints, gl.STATIC_DRAW);
+// Set up the “line point” attribute (first float from each pair)
+gl.enableVertexAttribArray(linesProgramLocations.aLinePoint);
+gl.vertexAttribIPointer(linesProgramLocations.aLinePoint, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 0);
+// Set up the “normal” attribute (second float from each pair)
+gl.enableVertexAttribArray(linesProgramLocations.aNormal);
+gl.vertexAttribIPointer(linesProgramLocations.aNormal, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 1 * Int16Array.BYTES_PER_ELEMENT);
+// Set up the index buffer
+const lineIndexBuffer = gl.createBuffer();
+if (!lineIndexBuffer) throw new Error('couldn’t create index buffer');
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndexBuffer);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
+
+
+// clean up
+gl.bindVertexArray(null);
+gl.bindBuffer(gl.ARRAY_BUFFER, null);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
 
 export default class LineField {
@@ -159,7 +241,6 @@ export default class LineField {
     gl.enable(gl.SCISSOR_TEST); // allows us to draw one row at a time
 
     // Each step is a separate draw call
-    const a = performance.now();
     for (let i = 0; i < NUM_LINE_POINTS - 1; i++) {
       // We draw two rows at each step:
       // 1. We copy the “previous step” row from the input texture to the output texture to ensure every row is present in both textures
@@ -190,12 +271,33 @@ export default class LineField {
       this.positionsTexture = this.tempPositionsTexture;
       this.tempPositionsTexture = temp;
     }
-    console.log(`traced ${NUM_LINE_POINTS - 1} steps in ${(performance.now() - a) / 1000}s`);
 
     // clean up
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.disable(gl.SCISSOR_TEST);
     gl.enable(gl.BLEND);
+  }
+
+  draw(ctx: SceneContext) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(linesProgram);
+    gl.bindVertexArray(lineVao);
+
+    // Bind positions texture
+    gl.uniform1i(linesProgramLocations.uPositionsTexture, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.positionsTexture);
+    // Bind uniforms
+    gl.uniform2f(linesProgramLocations.uResolution, ctx.size[0], ctx.size[1]);
+    gl.uniform1f(linesProgramLocations.uScreenDpr, ctx.dpr);
+    gl.uniform1f(linesProgramLocations.uLineWidth, LINE_WIDTH);
+    gl.uniform1f(linesProgramLocations.uLineFeatherWidth, LINE_FEATHER_WIDTH);
+    gl.uniform1f(linesProgramLocations.uLineAlpha, LINE_ALPHA);
+    gl.uniform1i(linesProgramLocations.uNumLinePoints, NUM_LINE_POINTS);
+
+    // Draw
+    gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
+    gl.drawElementsInstanced(gl.TRIANGLES, lineIndices.length, gl.UNSIGNED_SHORT, 0, NUM_LINES);
   }
 }

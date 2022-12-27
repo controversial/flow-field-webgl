@@ -1,23 +1,16 @@
 import './style.scss';
 
-import Renderer from './renderer';
+import Renderer, { SceneContext } from './renderer';
 import { canvas, gl } from './context';
-
-import drawShaderFullscreen from './utils/debug-shader-view';
-import textureViewFragment from './shaders/debug-texture-view-frag.glsl';
+import LineField from './passes/line-field';
 
 const renderer = new Renderer(canvas, gl);
+const lineField = new LineField();
 
 renderer.start();
 
-// Create red texture
-const tex = gl.createTexture();
-if (!tex) throw new Error('couldn’t create texture');
-gl.bindTexture(gl.TEXTURE_2D, tex);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
-gl.bindTexture(gl.TEXTURE_2D, null);
-
-renderer.addRenderStep(drawShaderFullscreen(textureViewFragment, { 'u_texture': tex }));
+renderer.addRenderStep((ctx: SceneContext) => lineField.update(ctx), true);
+renderer.addRenderStep((ctx: SceneContext) => lineField.draw(ctx));
 
 // Vite cleanup
 if (import.meta.hot) {

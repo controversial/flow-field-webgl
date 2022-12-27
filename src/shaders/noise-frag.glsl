@@ -24,7 +24,7 @@ void main() {
   const int harmonics = 4; // number of layers to stack
   const float harmonic_spread = 1.5; // difference in frequency between harmonics
   const float harmonic_gain = 0.7; // difference in amplitude between harmonics
-  const float speed = 0.1; // how fast the noise moves
+  const float speed = 0.05; // how fast the noise moves
 
   // Construct noise
   float value = 0.5;
