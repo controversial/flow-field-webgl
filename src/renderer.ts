@@ -28,6 +28,7 @@ export default class Renderer {
   raf?: ReturnType<typeof requestAnimationFrame>;
   startTime?: DOMHighResTimeStamp;
   eventListeners: EventListenersRecord = {};
+  resizeListeners: ((ctx: SceneContext) => void)[] = [];
 
 
   // Rendering is split into “steps”
@@ -49,9 +50,16 @@ export default class Renderer {
     const rect = this.canvas.getBoundingClientRect();
     this.canvas.width = rect.width * (window.devicePixelRatio ?? 1);
     this.canvas.height = rect.height * (window.devicePixelRatio ?? 1);
+    this.resizeListeners.forEach((listener) => listener(this.sceneContext));
   }
   get width() { return this.canvas.width; }
   get height() { return this.canvas.height; }
+  addResizeListener(listener: (ctx: SceneContext) => void) {
+    this.resizeListeners.push(listener);
+  }
+  removeResizeListener(listener: (ctx: SceneContext) => void) {
+    this.resizeListeners.splice(this.resizeListeners.indexOf(listener), 1);
+  }
 
 
   /**
