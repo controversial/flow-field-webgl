@@ -75,6 +75,7 @@ const linesProgramLocations = {
   uLineFeatherWidth: gl.getUniformLocation(linesProgram, 'u_line_feather_width'),
   uLineAlpha: gl.getUniformLocation(linesProgram, 'u_line_alpha'),
   uNumLinePoints: gl.getUniformLocation(linesProgram, 'u_num_line_points'),
+  uStepSize: gl.getUniformLocation(linesProgram, 'u_step_size'),
 };
 
 // Line VAO is for lines program
@@ -295,6 +296,7 @@ export default class LineField {
     gl.uniform1f(linesProgramLocations.uLineFeatherWidth, LINE_FEATHER_WIDTH);
     gl.uniform1f(linesProgramLocations.uLineAlpha, LINE_ALPHA);
     gl.uniform1i(linesProgramLocations.uNumLinePoints, NUM_LINE_POINTS);
+    gl.uniform1f(linesProgramLocations.uStepSize, STEP_SIZE);
 
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
