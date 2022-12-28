@@ -9,6 +9,13 @@ uniform vec2 u_resolution;
 uniform float u_screen_dpr;
 uniform float u_time;
 
+uniform float u_frequency;
+uniform float u_amplitude;
+uniform int u_harmonics;
+uniform float u_harmonic_spread;
+uniform float u_harmonic_gain;
+uniform float u_speed;
+
 out uint final_value;
 
 void main() {
@@ -18,23 +25,15 @@ void main() {
   // Fixed offset because the (0, 0) center looks too symmetrical
   xy += vec2(17, 20);
 
-  // Parameters for noise
-  const float frequency = 1.0; // scale
-  const float amplitude = 0.5;
-  const int harmonics = 4; // number of layers to stack
-  const float harmonic_spread = 1.5; // difference in frequency between harmonics
-  const float harmonic_gain = 0.7; // difference in amplitude between harmonics
-  const float speed = 0.05; // how fast the noise moves
-
   // Construct noise
   float value = 0.5;
-  float this_amplitude = amplitude;
-  float this_frequency = frequency;
-  for (int i = 0; i < harmonics; i++) {
-    value += this_amplitude * cnoise(vec3(xy * this_frequency, u_time * speed));
+  float this_amplitude = u_amplitude;
+  float this_frequency = u_frequency;
+  for (int i = 0; i < u_harmonics; i++) {
+    value += this_amplitude * cnoise(vec3(xy * this_frequency, u_time * u_speed));
 
-    this_frequency *= harmonic_spread;
-    this_amplitude *= harmonic_gain;
+    this_frequency *= u_harmonic_spread;
+    this_amplitude *= u_harmonic_gain;
   }
 
   final_value = clamp(uint(floor(clamp(value, 0., 1.) * 65536.)), 0u, 65535u);

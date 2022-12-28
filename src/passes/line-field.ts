@@ -1,5 +1,5 @@
 import { gl, canvas } from '../context';
-import { createProgram } from '../utils/shader';
+import { Program, UniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
 
 import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
@@ -23,28 +23,43 @@ const LINE_WIDTH = 6;
 const LINE_ALPHA = 0.25;
 /** How much of the lines’ sides to antialias? in dpr-normalized pixels */
 const LINE_FEATHER_WIDTH = 2;
+/** How should the noise field look? */
+const NOISE_PARAMS = {
+  frequency: { type: 'float', value: 1 },        // (first harmonic’s) scale
+  amplitude: { type: 'float', value: 0.5 },      // (first harmonic’s) height
+  harmonics: { type: 'int', value: 4 },          // number of layers to stack
+  harmonicSpread: { type: 'float', value: 1.5 }, // difference in frequency between harmonics
+  harmonicGain: { type: 'float', value: 0.7 },   // difference in amplitude between harmonics
+  speed: { type: 'float', value: 0.05 },         // how fast the noise moves
+} satisfies UniformsDefinition;
 
+const noiseProgram = new Program(
+  gl,
+  passthroughVertexSrc,
+  noiseFragmentSrc,
+  ['position'],
+  {
+    time: { type: 'float' },
+    screenDpr: { type: 'float' },
+    resolution: { type: 'vec2' },
+    ...NOISE_PARAMS,
+  }
+);
 
-const noiseProgram = createProgram(gl, passthroughVertexSrc, noiseFragmentSrc);
-const noiseProgramLocations = {
-  aPosition: gl.getAttribLocation(noiseProgram, 'a_position'),
-
-  uTime: gl.getUniformLocation(noiseProgram, 'u_time'),
-  uScreenDpr: gl.getUniformLocation(noiseProgram, 'u_screen_dpr'),
-  uResolution: gl.getUniformLocation(noiseProgram, 'u_resolution'),
-};
-
-const traceProgram = createProgram(gl, passthroughVertexSrc, traceFragmentSrc);
-const traceProgramLocations = {
-  aPosition: gl.getAttribLocation(traceProgram, 'a_position'),
-
-  uPositionsTexture: gl.getUniformLocation(traceProgram, 'u_positions_texture'),
-  uFieldTexture: gl.getUniformLocation(traceProgram, 'u_field_texture'),
-  uStepNumber: gl.getUniformLocation(traceProgram, 'u_step_number'),
-  uStepSize: gl.getUniformLocation(traceProgram, 'u_step_size'),
-  uScreenDpr: gl.getUniformLocation(traceProgram, 'u_screen_dpr'),
-  uResolution: gl.getUniformLocation(traceProgram, 'u_resolution'),
-};
+const traceProgram = new Program(
+  gl,
+  passthroughVertexSrc,
+  traceFragmentSrc,
+  ['position'],
+  {
+    positionsTexture: { type: 'usampler2D' },
+    fieldTexture: { type: 'usampler2D' },
+    stepNumber: { type: 'int' },
+    stepSize: { type: 'float', value: STEP_SIZE },
+    screenDpr: { type: 'float' },
+    resolution: { type: 'vec2' },
+  }
+);
 
 
 // “fullscreen” vao is for noise/trace programs
@@ -55,28 +70,29 @@ if (!vertexBuffer) throw new Error('couldn’t create vertex buffer');
 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 3, -1, -1, 3, -1]), gl.STATIC_DRAW);
 gl.bindVertexArray(fullscreenVao);
-if (noiseProgramLocations.aPosition !== traceProgramLocations.aPosition) throw new Error('attribute locations don’t match in noise/trace shaders');
-gl.enableVertexAttribArray(noiseProgramLocations.aPosition);
-gl.vertexAttribPointer(noiseProgramLocations.aPosition, 2, gl.FLOAT, false, 0, 0);
+if (!noiseProgram.attributes.position || noiseProgram.attributes.position.location !== traceProgram.attributes.position.location) throw new Error('attribute locations don’t match in noise/trace shaders');
+gl.enableVertexAttribArray(noiseProgram.attributes.position.location);
+gl.vertexAttribPointer(noiseProgram.attributes.position.location, 2, gl.FLOAT, false, 0, 0);
 
 
 
 
-const linesProgram = createProgram(gl, linesVertexSrc, linesFragmentSrc);
-const linesProgramLocations = {
-  // which line instance this point belongs to comes from gl_InstanceID
-  aLinePoint: gl.getAttribLocation(linesProgram, 'a_line_point'), // which “line point” this point in geometry belongs to
-  aNormal: gl.getAttribLocation(linesProgram, 'a_normal'), // is this the left or right side of the line?
-
-  uPositionsTexture: gl.getUniformLocation(linesProgram, 'u_positions_texture'),
-  uResolution: gl.getUniformLocation(linesProgram, 'u_resolution'),
-  uScreenDpr: gl.getUniformLocation(linesProgram, 'u_screen_dpr'),
-  uLineWidth: gl.getUniformLocation(linesProgram, 'u_line_width'),
-  uLineFeatherWidth: gl.getUniformLocation(linesProgram, 'u_line_feather_width'),
-  uLineAlpha: gl.getUniformLocation(linesProgram, 'u_line_alpha'),
-  uNumLinePoints: gl.getUniformLocation(linesProgram, 'u_num_line_points'),
-  uStepSize: gl.getUniformLocation(linesProgram, 'u_step_size'),
-};
+const linesProgram = new Program(
+  gl,
+  linesVertexSrc,
+  linesFragmentSrc,
+  ['linePoint', 'normal'],
+  {
+    positionsTexture: { type: 'usampler2D' },
+    resolution: { type: 'vec2' },
+    screenDpr: { type: 'float' },
+    lineWidth: { type: 'float', value: LINE_WIDTH },
+    lineFeatherWidth: { type: 'float', value: LINE_FEATHER_WIDTH },
+    lineAlpha: { type: 'float', value: LINE_ALPHA },
+    numLinePoints: { type: 'int', value: NUM_LINE_POINTS },
+    stepSize: { type: 'float', value: STEP_SIZE },
+  }
+);
 
 // Line VAO is for lines program
 const lineVao = gl.createVertexArray();
@@ -121,11 +137,11 @@ if (!lineVertexBuffer) throw new Error('couldn’t create vertex buffer');
 gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, linePoints, gl.STATIC_DRAW);
 // Set up the “line point” attribute (first float from each pair)
-gl.enableVertexAttribArray(linesProgramLocations.aLinePoint);
-gl.vertexAttribIPointer(linesProgramLocations.aLinePoint, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 0);
+gl.enableVertexAttribArray(linesProgram.attributes.linePoint.location);
+gl.vertexAttribIPointer(linesProgram.attributes.linePoint.location, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 0);
 // Set up the “normal” attribute (second float from each pair)
-gl.enableVertexAttribArray(linesProgramLocations.aNormal);
-gl.vertexAttribIPointer(linesProgramLocations.aNormal, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 1 * Int16Array.BYTES_PER_ELEMENT);
+gl.enableVertexAttribArray(linesProgram.attributes.normal.location);
+gl.vertexAttribIPointer(linesProgram.attributes.normal.location, 1, gl.SHORT, 2 * Int16Array.BYTES_PER_ELEMENT, 1 * Int16Array.BYTES_PER_ELEMENT);
 // Set up the index buffer
 const lineIndexBuffer = gl.createBuffer();
 if (!lineIndexBuffer) throw new Error('couldn’t create index buffer');
@@ -227,18 +243,22 @@ export default class LineField {
     gl.disable(gl.BLEND);
 
     // Draw noise shader to field texture
-    gl.useProgram(noiseProgram);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fieldTexture, 0);
-    // Bind uniforms
-    gl.uniform2f(noiseProgramLocations.uResolution, ctx.size[0], ctx.size[1]);
-    gl.uniform1f(noiseProgramLocations.uScreenDpr, ctx.dpr);
-    gl.uniform1f(noiseProgramLocations.uTime, ctx.time / 1000);
+    noiseProgram.use({
+      resolution: { type: 'vec2', value: ctx.size },
+      screenDpr: { type: 'float', value: ctx.dpr },
+      time: { type: 'float', value: ctx.time / 1000 },
+    });
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     // Use trace shader to trace lines step by step
-    gl.useProgram(traceProgram);
+    traceProgram.use({
+      resolution: { type: 'vec2', value: ctx.size },
+      screenDpr: { type: 'float', value: ctx.dpr },
+    });
+
     gl.enable(gl.SCISSOR_TEST); // allows us to draw one row at a time
 
     // Each step is a separate draw call
@@ -250,24 +270,16 @@ export default class LineField {
       gl.scissor(0, i, NUM_LINES, 2);
       // We render to the temp texture
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tempPositionsTexture, 0);
-      // Pass in the “primary” texture to read positions from
-      gl.uniform1i(traceProgramLocations.uPositionsTexture, 0);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, this.positionsTexture);
-      // Pass in field texture
-      gl.uniform1i(traceProgramLocations.uFieldTexture, 1);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, this.fieldTexture);
-      // Pass in the current step
-      gl.uniform1i(traceProgramLocations.uStepNumber, i);
-      // Pass in step size
-      gl.uniform1f(traceProgramLocations.uStepSize, STEP_SIZE);
-      // Pass in screen parameters
-      gl.uniform2f(traceProgramLocations.uResolution, ctx.size[0], ctx.size[1]);
-      gl.uniform1f(traceProgramLocations.uScreenDpr, ctx.dpr);
+      traceProgram.bindUniforms({
+        // and we read from the “primary” texture
+        positionsTexture: { type: 'usampler2D', value: this.positionsTexture },
+        fieldTexture: { type: 'usampler2D', value: this.fieldTexture },
+        stepNumber: { type: 'int', value: i },
+      });
+
       // Draw
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      // Swap textures so the texture we rendered to is the “primary” texture
+      // Swap textures so that the (now more up to date) texture we rendered to becomes the “primary” texture
       const temp = this.positionsTexture;
       this.positionsTexture = this.tempPositionsTexture;
       this.tempPositionsTexture = temp;
@@ -282,21 +294,13 @@ export default class LineField {
 
   draw(ctx: SceneContext) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.useProgram(linesProgram);
     gl.bindVertexArray(lineVao);
 
-    // Bind positions texture
-    gl.uniform1i(linesProgramLocations.uPositionsTexture, 0);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.positionsTexture);
-    // Bind uniforms
-    gl.uniform2f(linesProgramLocations.uResolution, ctx.size[0], ctx.size[1]);
-    gl.uniform1f(linesProgramLocations.uScreenDpr, ctx.dpr);
-    gl.uniform1f(linesProgramLocations.uLineWidth, LINE_WIDTH);
-    gl.uniform1f(linesProgramLocations.uLineFeatherWidth, LINE_FEATHER_WIDTH);
-    gl.uniform1f(linesProgramLocations.uLineAlpha, LINE_ALPHA);
-    gl.uniform1i(linesProgramLocations.uNumLinePoints, NUM_LINE_POINTS);
-    gl.uniform1f(linesProgramLocations.uStepSize, STEP_SIZE);
+    linesProgram.use({
+      positionsTexture: { type: 'usampler2D', value: this.positionsTexture },
+      resolution: { type: 'vec2', value: ctx.size },
+      screenDpr: { type: 'float', value: ctx.dpr },
+    });
 
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
