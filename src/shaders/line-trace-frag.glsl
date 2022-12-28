@@ -6,6 +6,7 @@ precision highp usampler2D;
 
 uniform usampler2D u_positions_texture; // 2-channel texture encoding line positions traced “so far”
 uniform usampler2D u_field_texture; // 1-channel texture encoding the flow field
+uniform float u_field_amplitude; // magnitude of min/max value encoded in the 0–65535 range
 uniform int u_step_number; // which step are we computing?
 uniform float u_step_size; // how far to move in the flow field per step?
 
@@ -17,8 +18,11 @@ uniform float u_screen_dpr;
 out uvec2 out_position;
 
 float sampleField(ivec2 position) {
-  uint field_value = texelFetch(u_field_texture, position, 0).r;
-  return float(field_value) / 65535.0;
+  float texture_value = float(texelFetch(u_field_texture, position, 0).r);
+  // the 0–65535 range encodes values from -u_field_amplitude to +u_field_amplitude
+  float normalized_value = texture_value / 65535.0;
+  float field_value = normalized_value * (2.0 * u_field_amplitude) - u_field_amplitude;
+  return field_value;
 }
 
 float sampleFieldBilinear(vec2 position) {

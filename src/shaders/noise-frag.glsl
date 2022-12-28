@@ -27,16 +27,21 @@ void main() {
   xy += vec2(17, 20);
 
   // Construct noise
-  float value = 0.5;
+  float value = 0.;
+  float total_amplitude = 0.;
   float this_amplitude = u_amplitude;
   float this_frequency = u_frequency;
   for (int i = 0; i < u_harmonics; i++) {
-    value += this_amplitude * cnoise(vec3(xy * this_frequency, u_time * u_speed));
+    value += this_amplitude * clamp(cnoise(vec3(xy * this_frequency, u_time * u_speed)), -1., 1.);
+    total_amplitude += this_amplitude;
 
     this_frequency *= u_harmonic_spread;
     this_amplitude *= u_harmonic_gain;
     xy += u_harmonic_travel;
   }
-
-  final_value = clamp(uint(floor(clamp(value, 0., 1.) * 65536.)), 0u, 65535u);
+  // Now, noise may range from -total_amplitude to total_amplitude
+  // we need to map this range to 0 to 65535
+  float scaled_value = (value + total_amplitude) / (total_amplitude * 2.);
+  // one more clamp for good measure
+  final_value = clamp(uint(floor(scaled_value * 65536.)), 0u, 65535u);
 }

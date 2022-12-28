@@ -33,6 +33,13 @@ const NOISE_PARAMS = {
   harmonicTravel: { type: 'vec2', value: [13, 11] }, // how much we shift coordiantes between harmonics (so that the harmonics don't line up)
   speed: { type: 'float', value: 0.05 },             // how fast the noise moves
 } satisfies UniformsDefinition;
+// Calculate amplitude of noise based on these parameters
+let NOISE_MAX_AMPLITUDE = 0;
+let tempAmplitude = NOISE_PARAMS.amplitude.value;
+for (let i = 0; i < NOISE_PARAMS.harmonics.value; i++) {
+  NOISE_MAX_AMPLITUDE += tempAmplitude;
+  tempAmplitude *= NOISE_PARAMS.harmonicGain.value;
+}
 
 const noiseProgram = new Program(
   gl,
@@ -55,6 +62,7 @@ const traceProgram = new Program(
   {
     positionsTexture: { type: 'usampler2D' },
     fieldTexture: { type: 'usampler2D' },
+    fieldAmplitude: { type: 'float', value: NOISE_MAX_AMPLITUDE },
     stepNumber: { type: 'int' },
     stepSize: { type: 'float', value: STEP_SIZE },
     screenDpr: { type: 'float' },
