@@ -27,19 +27,23 @@ import MemoryMonitor from './utils/memory';
 const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
+const performanceFolder = pane.addFolder({ title: 'Performance' });
+
 // FPS meter: we ensure 'start' is the first step and 'end' is the last step
-const fpsGraph = pane.addBlade({ view: 'fpsgraph', label: 'FPS', interval: 500, min: 0, max: 150 } satisfies FpsGraphBladeParams) as FpsGraphBladeApi;
+const fpsGraph = performanceFolder.addBlade({ view: 'fpsgraph', label: 'FPS', interval: 500, min: 0, max: 150 } satisfies FpsGraphBladeParams) as FpsGraphBladeApi;
 renderer.beforeFrameSteps.unshift(() => fpsGraph.begin());
 renderer.renderSteps.push(() => fpsGraph.end());
+// Timers
+performanceFolder.addMonitor(
+  { get value() { return `Trace: ${lineField.timers.trace.summary}\nDraw: ${lineField.timers.draw.summary}\nFrame: ${renderer.renderTimer.summary}`; } },
+  'value',
+  { label: 'Timers', interval: 500, multiline: true, lineCount: 3.4 },
+);
 // Memory
 const memoryMonitor = new MemoryMonitor();
 if (memoryMonitor.supported) {
-  pane.addMonitor(memoryMonitor, 'summary', { label: 'Memory', interval: 500, multiline: true });
+  performanceFolder.addMonitor(memoryMonitor, 'summary', { label: 'Memory', interval: 500, multiline: true, lineCount: 5 });
 }
-// Timers
-pane.addMonitor(lineField.timers.trace, 'summary', { label: 'Trace time', interval: 500 });
-pane.addMonitor(lineField.timers.draw, 'summary', { label: 'Draw time', interval: 500 });
-pane.addMonitor(renderer.renderTimer, 'summary', { label: 'Everything', interval: 500 });
 
 // Hide/show pane with 'p' key
 document.addEventListener('keydown', (e) => {
