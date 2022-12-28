@@ -25,12 +25,13 @@ const LINE_ALPHA = 0.25;
 const LINE_FEATHER_WIDTH = 2;
 /** How should the noise field look? */
 const NOISE_PARAMS = {
-  frequency: { type: 'float', value: 1 },        // (first harmonic’s) scale
-  amplitude: { type: 'float', value: 0.5 },      // (first harmonic’s) height
-  harmonics: { type: 'int', value: 4 },          // number of layers to stack
-  harmonicSpread: { type: 'float', value: 1.5 }, // difference in frequency between harmonics
-  harmonicGain: { type: 'float', value: 0.7 },   // difference in amplitude between harmonics
-  speed: { type: 'float', value: 0.05 },         // how fast the noise moves
+  frequency: { type: 'float', value: 1 },            // (first harmonic’s) scale
+  amplitude: { type: 'float', value: 0.5 },          // (first harmonic’s) height
+  harmonics: { type: 'int', value: 4 },              // number of layers to stack
+  harmonicSpread: { type: 'float', value: 1.5 },     // difference in frequency between harmonics
+  harmonicGain: { type: 'float', value: 0.7 },       // difference in amplitude between harmonics
+  harmonicTravel: { type: 'vec2', value: [13, 11] }, // how much we shift coordiantes between harmonics (so that the harmonics don't line up)
+  speed: { type: 'float', value: 0.05 },             // how fast the noise moves
 } satisfies UniformsDefinition;
 
 const noiseProgram = new Program(

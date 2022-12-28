@@ -14,6 +14,7 @@ uniform float u_amplitude;
 uniform int u_harmonics;
 uniform float u_harmonic_spread;
 uniform float u_harmonic_gain;
+uniform vec2 u_harmonic_travel;
 uniform float u_speed;
 
 out uint final_value;
@@ -34,6 +35,7 @@ void main() {
 
     this_frequency *= u_harmonic_spread;
     this_amplitude *= u_harmonic_gain;
+    xy += u_harmonic_travel;
   }
 
   final_value = clamp(uint(floor(clamp(value, 0., 1.) * 65536.)), 0u, 65535u);
