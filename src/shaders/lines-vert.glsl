@@ -45,8 +45,17 @@ void main() {
   vec2 px = 1. / u_resolution * u_screen_dpr; // normalized pixel size (equivalent across screens)
   vec2 offset = n * orientation * 0.5 * adjusted_line_width * px; // move both points outwards along the normal.
 
+  // how much on each side should we clip off to hide lines that run out of bounds?
+  vec2 overscan = (adjusted_line_width * 0.5 + 2.) * px;
+  // How much should we scale positions by to account for overscan?
+  vec2 overscan_scale = 1. / (1. - overscan * 2.);
+
   vec2 pos = point_pos + offset;
-  gl_Position = vec4(pos * 2.0 - 1.0, 0, 1); // convert to clip space
+  gl_Position = vec4(
+    (pos * 2. - 1.) * overscan_scale,
+    0,
+    1
+  );
 
   v_line_index = line_index;
   v_uv = vec2(
