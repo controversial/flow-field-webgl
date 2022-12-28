@@ -235,7 +235,6 @@ export default class LineField {
   }
 
   onResize(ctx: SceneContext) {
-    console.log('onResize');
     const [width, height] = ctx.size;
     gl.bindTexture(gl.TEXTURE_2D, this.fieldTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(width * height));

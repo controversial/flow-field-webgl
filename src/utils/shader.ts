@@ -20,7 +20,7 @@ export function linkProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShade
   const success = gl.getProgramParameter(program, gl.LINK_STATUS);
   if (success) return program;
 
-  console.log(gl.getProgramInfoLog(program));
+  console.error(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
   return null;
 }
@@ -110,8 +110,6 @@ export class Program {
       const location = this.gl.getUniformLocation(this.program, transformedName);
       return [name, { ...definition, name: transformedName, location }];
     }));
-    console.log(this.uniforms);
-    console.log(this.attributes);
   }
 
   get uniformsList() { return Object.values(this.uniforms); }

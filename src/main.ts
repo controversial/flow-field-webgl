@@ -11,6 +11,7 @@ renderer.start();
 
 renderer.addRenderStep((ctx: SceneContext) => lineField.update(ctx), true);
 renderer.addRenderStep((ctx: SceneContext) => lineField.draw(ctx));
+renderer.addResizeListener((ctx: SceneContext) => lineField.onResize(ctx));
 
 document.body.appendChild(renderer.stats.dom);
 
