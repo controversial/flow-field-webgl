@@ -1,3 +1,6 @@
+import PerformanceTimer from './utils/performance-timer';
+
+
 export interface SceneContext {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
@@ -30,6 +33,7 @@ export default class Renderer {
   eventListeners: EventListenersRecord = {};
   resizeListeners: ((ctx: SceneContext) => void)[] = [];
 
+  renderTimer: PerformanceTimer;
 
   // Rendering is split into “steps”
   beforeFrameSteps: RenderStep[] = [];
@@ -42,6 +46,9 @@ export default class Renderer {
     this.updateCanvasSize();
     this.resizeObserver = new ResizeObserver(() => this.updateCanvasSize());
     this.resizeObserver.observe(this.canvas);
+
+    // Observability
+    this.renderTimer = new PerformanceTimer();
   }
 
 
@@ -78,6 +85,7 @@ export default class Renderer {
 
   /** Draw a single frame */
   draw(delta: DOMHighResTimeStamp) {
+    this.renderTimer.start();
     const context = this.sceneContext;
     // Do setup steps
     this.beforeFrameSteps.forEach((step) => step(context, delta));
@@ -92,6 +100,7 @@ export default class Renderer {
 
     // Do render steps
     this.renderSteps.forEach((step) => step(context, delta));
+    this.renderTimer.stop();
   }
 
   /** Start render loop */

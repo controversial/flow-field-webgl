@@ -27,6 +27,11 @@ pane.registerPlugin(EssentialsPlugin);
 const fpsGraph = pane.addBlade({ view: 'fpsgraph', label: 'FPS', interval: 500, min: 0, max: 150 } satisfies FpsGraphBladeParams) as FpsGraphBladeApi;
 renderer.beforeFrameSteps.unshift(() => fpsGraph.begin());
 renderer.renderSteps.push(() => fpsGraph.end());
+// Timers
+pane.addMonitor(lineField.timers.trace, 'summary', { label: 'Trace time', interval: 500 });
+pane.addMonitor(lineField.timers.draw, 'summary', { label: 'Draw time', interval: 500 });
+pane.addMonitor(renderer.renderTimer, 'summary', { label: 'Everything', interval: 500 });
+
 
 // Vite cleanup
 // This is probably not the right way to use the Vite HMR APIs

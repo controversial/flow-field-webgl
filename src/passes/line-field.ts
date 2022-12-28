@@ -1,6 +1,7 @@
 import { gl, canvas } from '../context';
 import { Program, UniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
+import PerformanceTimer from '../utils/performance-timer';
 
 import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
 import noiseFragmentSrc from '../shaders/noise-frag.glsl';
@@ -183,6 +184,11 @@ export default class LineField {
 
   private framebuffer: WebGLFramebuffer;
 
+  timers: {
+    trace: PerformanceTimer;
+    draw: PerformanceTimer;
+  };
+
   constructor() {
     // Initialize starting values. The first NUM_LINES * 2 values are the starting positions; the rest are 0
     // TODO: voronoi relaxation for more natural grid?
@@ -232,6 +238,12 @@ export default class LineField {
     // Clean up
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // Timers
+    this.timers = {
+      trace: new PerformanceTimer(),
+      draw: new PerformanceTimer(),
+    };
   }
 
   onResize(ctx: SceneContext) {
@@ -262,6 +274,7 @@ export default class LineField {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     // Use trace shader to trace lines step by step
+    this.timers.trace.start();
     traceProgram.use({
       resolution: { type: 'vec2', value: ctx.size },
       screenDpr: { type: 'float', value: ctx.dpr },
@@ -298,9 +311,11 @@ export default class LineField {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.disable(gl.SCISSOR_TEST);
     gl.enable(gl.BLEND);
+    this.timers.trace.stop();
   }
 
   draw(ctx: SceneContext) {
+    this.timers.draw.start();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindVertexArray(lineVao);
 
@@ -313,5 +328,6 @@ export default class LineField {
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
     gl.drawElementsInstanced(gl.TRIANGLES, lineIndices.length, gl.UNSIGNED_SHORT, 0, NUM_LINES);
+    this.timers.draw.stop();
   }
 }
