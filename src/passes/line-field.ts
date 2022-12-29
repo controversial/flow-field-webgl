@@ -1,6 +1,7 @@
 import { Program, UniformsDefinition, LooseUniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
 import PerformanceTimer from '../utils/performance-timer';
+import { alea } from 'seedrandom';
 
 import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
 import noiseFragmentSrc from '../shaders/noise-frag.glsl';
@@ -104,6 +105,8 @@ export default class LineField {
   private settings = {
     /** How many lines to render? Can’t exceed GL_MAX_TEXTURE_SIZE */
     numLines: 2048,
+    /** Seed for RNG that decides line start positions */
+    seed: 'hello world',
     /** How many “points” in each line? Can’t exceed GL_MAX_TEXTURE_SIZE */
     numLinePoints: 40,
     /** How far across the noise field to move at each step? in dpr-normalized pixels */
@@ -131,14 +134,15 @@ export default class LineField {
 
 
   /** Get two identical “positions” textures for a given numLines (width) and numLinePoints (height) */
-  private generatePositionsTextures({ numLines, numLinePoints }: { numLines: number, numLinePoints: number }) {
+  private generatePositionsTextures({ numLines, numLinePoints, seed }: { numLines: number, numLinePoints: number, seed: string }) {
     const { gl } = this;
     // Initialize starting values. The first NUM_LINES * 2 values encode the starting position for each line; the rest are 0
     // TODO: voronoi relaxation for more natural grid?
     const startingPoints = new Uint16Array(numLines * numLinePoints * 2);
+    const rng = new alea(seed);
     for (let i = 0; i < numLines; i++) {
-      startingPoints[i * 2] = Math.floor(Math.random() * (2 ** 16));
-      startingPoints[i * 2 + 1] = Math.floor(Math.random() * (2 ** 16));
+      startingPoints[i * 2] = Math.floor(rng() * (2 ** 16));
+      startingPoints[i * 2 + 1] = Math.floor(rng() * (2 ** 16));
     }
     // Create the textures
     const textures = [1, 2].map(() => {
@@ -421,6 +425,15 @@ export default class LineField {
     this.textures.positions = positionsTextures[0];
     this.textures._tempPositions = positionsTextures[1];
     this.settings.numLines = value;
+  }
+
+  get seed() { return this.settings.seed; }
+  set seed(value: string) {
+    // We need to regenerate the positions textures so that starting positions reflect the new seed
+    const positionsTextures = this.generatePositionsTextures({ ...this.settings, seed: value });
+    this.textures.positions = positionsTextures[0];
+    this.textures._tempPositions = positionsTextures[1];
+    this.settings.seed = value;
   }
 
   get numLinePoints() { return this.settings.numLinePoints; }
