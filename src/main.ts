@@ -5,15 +5,20 @@ import { canvas, gl } from './context';
 import LineField from './passes/line-field';
 
 
-const renderer = new Renderer(canvas, gl);
-const lineField = new LineField();
+// Create simulator for flow field
 
-renderer.start();
+const lineField = new LineField(gl);
+
+
+// Set up render pipeline
+
+const renderer = new Renderer(canvas, gl);
 
 renderer.addRenderStep((ctx: SceneContext) => lineField.update(ctx), true);
 renderer.addRenderStep((ctx: SceneContext) => lineField.draw(ctx));
 renderer.addResizeListener((ctx: SceneContext) => lineField.onResize(ctx));
 
+renderer.start();
 
 
 // Set up monitoring pane
