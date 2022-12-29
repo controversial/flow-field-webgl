@@ -71,29 +71,32 @@ interface AttributeRecord {
   location: ReturnType<WebGL2RenderingContext['getAttribLocation']>;
 }
 
+// String utilities
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const getUniformName = (str: string) => `u_${str.includes('_') ? str : camelToSnake(str)}` as const;
 const getAttributeName = (str: string) => `a_${str.includes('_') ? str : camelToSnake(str)}` as const;
 
+// Type utilities
 function assertNever(x: never): never {
   throw new Error('Unexpected object: ' + x);
 }
+type Entries<T> = { [K in keyof T]: [K, T[K]]; }[keyof T][];
 
 
-export class Program {
+export class Program<UniformName extends string, AttributeName extends string> {
   gl: WebGL2RenderingContext;
   vertexShaderSrc: string;
   fragmentShaderSrc: string;
   program: WebGLProgram;
-  attributes: Record<string, AttributeRecord>;
-  uniforms: Record<string, UniformRecord>;
+  attributes: { [key in AttributeName]: AttributeRecord };
+  uniforms: { [key in UniformName]: UniformRecord };
 
   constructor(
     gl: WebGL2RenderingContext,
     vertexShaderSrc: string,
     fragmentShaderSrc: string,
-    attributeNames: string[] = [],
-    uniforms: LooseUniformsDefinition = {},
+    attributeNames: readonly AttributeName[],
+    uniforms: { [key in UniformName]: GlslTypeMaybeValue },
   ) {
     this.gl = gl;
     this.vertexShaderSrc = vertexShaderSrc;
@@ -105,23 +108,29 @@ export class Program {
       const location = this.gl.getAttribLocation(this.program, transformedName);
       return [name, { name: transformedName, location }];
     }));
-    this.uniforms = Object.fromEntries(Object.entries(uniforms).map(([name, definition]) => {
-      const transformedName = getUniformName(name);
-      const location = this.gl.getUniformLocation(this.program, transformedName);
-      return [name, { ...definition, name: transformedName, location }];
-    }));
+
+    this.uniforms = Object.fromEntries(
+      (Object.entries(uniforms) as Entries<typeof uniforms>)
+        .map(([name, definition]) => {
+          const transformedName = getUniformName(name);
+          const location = this.gl.getUniformLocation(this.program, transformedName);
+          return [name, { ...definition, name: transformedName, location }];
+        })
+    );
   }
 
-  get uniformsList() { return Object.values(this.uniforms); }
-  get attributesList() { return Object.values(this.attributes); }
+  get uniformsList(): UniformRecord[] { return Object.values(this.uniforms); }
+  get attributesList(): AttributeRecord[] { return Object.values(this.attributes); }
 
-  use(overrides: UniformsDefinition = {}) {
+  use(overrides?: Partial<Record<UniformName, GlslTypeValuePair>>) {
     this.gl.useProgram(this.program);
-    if (Object.keys(overrides).length) this.bindUniforms(overrides);
+    if (overrides) this.bindUniforms(overrides);
   }
 
-  bindUniforms(overrides: UniformsDefinition) {
-    const overrides2 = Object.entries(overrides).map(([name, definition]) => ({ ...definition, name: getUniformName(name) }));
+  bindUniforms(overrides: Partial<Record<UniformName, GlslTypeValuePair>>) {
+    const overrides2 = (Object.entries(overrides) as Entries<typeof overrides>)
+      .filter(([name]) => Object.keys(this.uniforms).includes(name))
+      .map(([name, definition]) => ({ ...definition, name: getUniformName(name) }));
     const uniforms = this.uniformsList.map((uniform) => ({
       ...uniform,
       ...[...overrides2].reverse().find((override) => {
@@ -129,7 +138,7 @@ export class Program {
         if (override.type !== uniform.type) throw new Error(`Uniform ${override.name} has type ${override.type} but was expected to be ${uniform.type}`);
         return true;
       }),
-    })) as UniformRecord[];
+    }));
     const isComplete = (uniform: UniformRecord): uniform is CompleteUniformRecord => 'value' in uniform;
     const completeUniforms = uniforms.filter(isComplete);
 

@@ -12,3 +12,10 @@ interface Performance {
     })[],
   }>;
 }
+
+interface ObjectConstructor {
+  // redefine Object.fromEntries to preserve key type as long as that key type extends string
+  // I think this produces correct results in all cases
+  fromEntries<K extends string, V>(entries: Iterable<readonly [K, V]>): Record<K, V>;
+  // 2 overloads from typescript core are preserved
+}
