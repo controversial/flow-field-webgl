@@ -17,10 +17,14 @@ export default defineConfig({
   // Split tweakpane into its own chunk
   build: {
     rollupOptions: {
-      plugins: [visualizer({ emitFile: true })],
+      plugins: [visualizer({ emitFile: true, gzipSize: true, brotliSize: true })],
       output: {
         manualChunks(id) {
+          // Split tweakpane into its own chunk
           if (/node_modules\/@?tweakpane/.test(id)) return 'tweakpane';
+          // Split all node modules (besides whitelisted ones) into their own chunk
+          const whitelist = ['seedrandom'];
+          if (id.includes('node_modules') && !whitelist.some((x) => id.includes(`node_modules/${x}`))) return 'vendor';
         },
       },
     },
