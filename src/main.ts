@@ -29,7 +29,7 @@ renderer.addResizeListener((ctx: SceneContext) => lineField.onResize(ctx));
 renderer.start();
 
 
-// Set up monitoring pane
+// Set up tweakpane
 
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
@@ -39,6 +39,28 @@ import MemoryMonitor from './utils/memory';
 
 const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
+
+// Set up “lines” folder
+
+const lineFieldFolder = pane.addFolder({ title: 'Lines' });
+lineFieldFolder.addInput(lineField, 'numLines', { label: 'count', min: 1, max: gl.getParameter(gl.MAX_TEXTURE_SIZE), step: 1 });
+lineFieldFolder.addInput(lineField, 'numLinePoints', { label: '# points', min: 1, max: 100, step: 1 });
+lineFieldFolder.addInput(lineField, 'stepSize', { label: 'step distance', min: 0.1, max: 10, step: 0.1 });
+lineFieldFolder.addInput(lineField, 'lineWidth', { label: 'width', min: 1, max: 30, step: 0.1 });
+lineFieldFolder.addInput(lineField, 'lineAlpha', { label: 'alpha', min: 0, max: 1, step: 0.01 });
+
+// Set up “noise field” folder
+
+const noiseFolder = pane.addFolder({ title: 'Noise field' });
+noiseFolder.addInput(lineField.noiseParams.frequency, 'value', { label: 'frequency', min: 0.1, max: 5, step: 0.1 });
+noiseFolder.addInput(lineField.noiseParams.amplitude, 'value', { label: 'amplitude', min: 0.1, max: 5, step: 0.1 });
+noiseFolder.addInput(lineField.noiseParams.harmonics, 'value', { label: 'harmonics', min: 1, max: 10, step: 1 });
+noiseFolder.addInput(lineField.noiseParams.harmonicSpread, 'value', { label: 'harmonic spread', min: 1.1, max: 5, step: 0.1 });
+noiseFolder.addInput(lineField.noiseParams.harmonicGain, 'value', { label: 'harmonic gain', min: 0.1, max: 1, step: 0.01 });
+noiseFolder.addInput(lineField.noiseParams.speed, 'value', { label: 'speed', min: 0.01, max: 1, step: 0.01 });
+
+
+// Set up “performance” folder
 
 const performanceFolder = pane.addFolder({ title: 'Performance' });
 
