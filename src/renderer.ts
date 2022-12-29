@@ -1,4 +1,4 @@
-import PerformanceTimer from './utils/performance-timer';
+import { PerformanceTimer } from './utils/timers';
 
 
 export interface SceneContext {

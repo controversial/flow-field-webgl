@@ -1,6 +1,6 @@
 import { Program, UniformsDefinition, LooseUniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
-import PerformanceTimer from '../utils/performance-timer';
+import { PerformanceTimer } from '../utils/timers';
 import alea from 'seedrandom/lib/alea';
 
 import { Delaunay } from 'd3-delaunay';

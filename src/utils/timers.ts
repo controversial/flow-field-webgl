@@ -1,5 +1,5 @@
 /** Measures execution time with high efficiency, and averages results from multiple samples */
-export default class PerformanceTimer {
+export class PerformanceTimer {
   timings: DOMHighResTimeStamp[] = [];
   pointer = 0;
   _size: number;
