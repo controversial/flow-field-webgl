@@ -1,5 +1,6 @@
 import glsl from 'vite-plugin-glsl';
 import { defineConfig } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 
 export default defineConfig({
@@ -16,6 +17,7 @@ export default defineConfig({
   // Split tweakpane into its own chunk
   build: {
     rollupOptions: {
+      plugins: [visualizer({ emitFile: true })],
       output: {
         manualChunks(id) {
           if (/node_modules\/@?tweakpane/.test(id)) return 'tweakpane';
