@@ -19,7 +19,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (/node_modules\/@?tweakpane/.test(id)) return 'tweakpane';
-          else if (/node_modules\//.test(id)) return 'vendor';
         },
       },
     },

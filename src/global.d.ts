@@ -3,6 +3,11 @@ declare module '*.glsl' {
   export default value;
 }
 
+declare module 'seedrandom/lib/alea' {
+  const alea: import('seedrandom')['alea'];
+  export default alea;
+}
+
 interface Performance {
   measureUserAgentSpecificMemory?(): Promise<{
     bytes: number,

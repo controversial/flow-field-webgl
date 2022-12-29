@@ -1,7 +1,7 @@
 import { Program, UniformsDefinition, LooseUniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
 import PerformanceTimer from '../utils/performance-timer';
-import { alea } from 'seedrandom';
+import alea from 'seedrandom/lib/alea';
 
 import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
 import noiseFragmentSrc from '../shaders/noise-frag.glsl';
