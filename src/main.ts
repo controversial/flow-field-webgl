@@ -44,6 +44,7 @@ pane.registerPlugin(EssentialsPlugin);
 
 const lineFieldFolder = pane.addFolder({ title: 'Lines' });
 lineFieldFolder.addInput(lineField, 'numLines', { label: 'count', min: 1, max: gl.getParameter(gl.MAX_TEXTURE_SIZE), step: 1 });
+lineFieldFolder.addInput(lineField, 'voronoiIterations', { label: 'uniform spacing', min: 0, max: 5, step: 0.1 });
 lineFieldFolder.addInput(lineField, 'numLinePoints', { label: '# points', min: 1, max: 100, step: 1 });
 lineFieldFolder.addInput(lineField, 'stepSize', { label: 'step distance', min: 0.1, max: 10, step: 0.1 });
 lineFieldFolder.addInput(lineField, 'lineWidth', { label: 'width', min: 1, max: 30, step: 0.1 });

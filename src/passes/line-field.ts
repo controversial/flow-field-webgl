@@ -3,6 +3,9 @@ import type { SceneContext } from '../renderer';
 import PerformanceTimer from '../utils/performance-timer';
 import alea from 'seedrandom/lib/alea';
 
+import { Delaunay } from 'd3-delaunay';
+import { polygonCentroid } from 'd3-polygon';
+
 import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
 import noiseFragmentSrc from '../shaders/noise-frag.glsl';
 import traceFragmentSrc from '../shaders/line-trace-frag.glsl';
@@ -107,6 +110,8 @@ export default class LineField {
     numLines: 2048,
     /** Seed for RNG that decides line start positions */
     seed: 'hello world',
+    /** How many iterations we spend “relaxing” the line start positions */
+    voronoiIterations: 0.5,
     /** How many “points” in each line? Can’t exceed GL_MAX_TEXTURE_SIZE */
     numLinePoints: 40,
     /** How far across the noise field to move at each step? in dpr-normalized pixels */
@@ -134,22 +139,41 @@ export default class LineField {
 
 
   /** Get two identical “positions” textures for a given numLines (width) and numLinePoints (height) */
-  private generatePositionsTextures({ numLines, numLinePoints, seed }: { numLines: number, numLinePoints: number, seed: string }) {
+  private generatePositionsTextures({ numLines, numLinePoints, seed, voronoiIterations }: { numLines: number, numLinePoints: number, seed: string, voronoiIterations: number }) {
     const { gl } = this;
-    // Initialize starting values. The first NUM_LINES * 2 values encode the starting position for each line; the rest are 0
-    // TODO: voronoi relaxation for more natural grid?
-    const startingPoints = new Uint16Array(numLines * numLinePoints * 2);
+    // Random starting positions of lines
     const rng = new alea(seed);
-    for (let i = 0; i < numLines; i++) {
-      startingPoints[i * 2] = Math.floor(rng() * (2 ** 16));
-      startingPoints[i * 2 + 1] = Math.floor(rng() * (2 ** 16));
+    const randomPoints = new Array(numLines * 2).fill(null).map(() => rng());
+    const startingPoints = [...randomPoints];
+    // Voronoi relaxation for more natural grid
+    if (voronoiIterations > 0) {
+      const delaunay = new Delaunay(startingPoints);
+      const voronoi = delaunay.voronoi([0, 0, 1, 1]);
+      for (let iter = 0; iter < voronoiIterations; iter++) {
+        for (let i = 0; i < numLines; i++) {
+          const cell = voronoi.cellPolygon(i);
+          const [newX, newY] = polygonCentroid(cell);
+          const [dx, dy] = [newX - startingPoints[i * 2], newY - startingPoints[i * 2 + 1]];
+          // allow for fractional 'voronoiIterations' values by moving less than all the way on the last step
+          const strength = Math.min(voronoiIterations - iter, 1);
+          // note: startingPoints is passed by reference into Delaunay
+          startingPoints[i * 2] += dx * strength;
+          startingPoints[i * 2 + 1] += dy * strength;
+        }
+        if (iter < voronoiIterations - 1) voronoi.update();
+      }
     }
+
+    // Initialize starting values. The first NUM_LINES * 2 values encode the starting position for each line; the rest are 0
+    const startingTextureData = new Uint16Array(numLines * numLinePoints * 2);
+    // starting positions are copied from the positions computed above
+    for (let i = 0; i < numLines * 2; i++) startingTextureData[i] = Math.floor(startingPoints[i] * (2 ** 16));
     // Create the textures
     const textures = [1, 2].map(() => {
       const texture = gl.createTexture();
       if (!texture) throw new Error('couldn’t create texture');
       gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16UI, numLines, numLinePoints, 0, gl.RG_INTEGER, gl.UNSIGNED_SHORT, startingPoints);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16UI, numLines, numLinePoints, 0, gl.RG_INTEGER, gl.UNSIGNED_SHORT, startingTextureData);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -434,6 +458,15 @@ export default class LineField {
     this.textures.positions = positionsTextures[0];
     this.textures._tempPositions = positionsTextures[1];
     this.settings.seed = value;
+  }
+
+  get voronoiIterations() { return this.settings.voronoiIterations; }
+  set voronoiIterations(value: number) {
+    // We need to regenerate the positions textures so that starting positions reflect the new relaxation amount
+    const positionsTextures = this.generatePositionsTextures({ ...this.settings, voronoiIterations: value });
+    this.textures.positions = positionsTextures[0];
+    this.textures._tempPositions = positionsTextures[1];
+    this.settings.voronoiIterations = value;
   }
 
   get numLinePoints() { return this.settings.numLinePoints; }
