@@ -107,7 +107,9 @@ export default class LineField {
   /** Settings for the simulation (accessed and controlled through getters & setters so that texture sizes stay up to date) */
   private settings = {
     /** How many lines to render? Can’t exceed GL_MAX_TEXTURE_SIZE */
-    numLines: 2048,
+    numLines: 1, // will be set by constructor to hit targetDensity
+    /** desired number of lines per dpr-normalized pixel area */
+    targetDensity: 0.0025,
     /** Seed for RNG that decides line start positions */
     seed: 'hello world',
     /** How many iterations we spend “relaxing” the line start positions */
@@ -123,7 +125,6 @@ export default class LineField {
     /** Noise parameters */
     noiseParams: structuredClone(DEFAULT_NOISE_PARAMS) as typeof DEFAULT_NOISE_PARAMS,
   };
-
 
   timers = {
     trace: new PerformanceTimer(),
@@ -296,6 +297,10 @@ export default class LineField {
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
 
+    // Compute starting number of lines for density
+    const numLines = Math.round(this.canvasArea * this.settings.targetDensity);
+    this.settings.numLines = Math.min(numLines, gl.getParameter(gl.MAX_TEXTURE_SIZE)); // Can’t have more lines than fit on the texture
+
     // Initialize textures
     const positionsTextures = this.generatePositionsTextures(this.settings);
     const fieldTexture = this.generateFieldTexture(gl.canvas.width, gl.canvas.height);
@@ -438,8 +443,23 @@ export default class LineField {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(width * height));
     // Clean up
     gl.bindTexture(gl.TEXTURE_2D, null);
+    // Update number of lines to match density
+    const newArea = (width / ctx.dpr) * (height / ctx.dpr);
+    const newNumLines = Math.round(newArea * this.settings.targetDensity);
+    console.log(this.numLines, newNumLines);
+    this.numLines = Math.min(newNumLines, gl.getParameter(gl.MAX_TEXTURE_SIZE));
   }
 
+  /** Total number of pixels on the canvas */
+  get canvasArea() {
+    const { gl } = this;
+    const canvasRect = (
+      (gl.canvas instanceof HTMLCanvasElement)
+        ? gl.canvas.getBoundingClientRect() // for HTMLCanvasElement
+        : gl.canvas // for OffscreenCanvas (we don’t use this in practice but it makes TS happy)
+    ) satisfies { width: number; height: number; }; // either value has width/height properties
+    return canvasRect.width * canvasRect.height;
+  }
 
   // getters and setters for settings
   get numLines() { return this.settings.numLines; }
@@ -449,6 +469,8 @@ export default class LineField {
     this.textures.positions = positionsTextures[0];
     this.textures._tempPositions = positionsTextures[1];
     this.settings.numLines = value;
+    console.log('setting numLines', value);
+    this.settings.targetDensity = this.settings.numLines / this.canvasArea;
   }
 
   get seed() { return this.settings.seed; }

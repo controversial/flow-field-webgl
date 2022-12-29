@@ -49,6 +49,8 @@ lineFieldFolder.addInput(lineField, 'numLinePoints', { label: '# points', min: 1
 lineFieldFolder.addInput(lineField, 'stepSize', { label: 'step distance', min: 0.1, max: 10, step: 0.1 });
 lineFieldFolder.addInput(lineField, 'lineWidth', { label: 'width', min: 1, max: 30, step: 0.1 });
 lineFieldFolder.addInput(lineField, 'lineAlpha', { label: 'alpha', min: 0, max: 1, step: 0.01 });
+// Respond to changes after canvas is resized
+renderer.addResizeListener(() => pane.refresh());
 
 // Set up “noise field” folder
 
