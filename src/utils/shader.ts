@@ -115,7 +115,7 @@ export class Program<UniformName extends string, AttributeName extends string> {
           const transformedName = getUniformName(name);
           const location = this.gl.getUniformLocation(this.program, transformedName);
           return [name, { ...definition, name: transformedName, location }];
-        })
+        }),
     );
   }
 
