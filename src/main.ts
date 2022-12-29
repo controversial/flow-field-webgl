@@ -1,8 +1,16 @@
 import './style.scss';
 
 import Renderer, { SceneContext } from './renderer';
-import { canvas, gl } from './context';
 import LineField from './passes/line-field';
+
+
+// Set up canvas
+
+const canvas = document.getElementById('canvas');
+if (!(canvas instanceof HTMLCanvasElement)) throw new Error('Failed to find canvas element');
+
+const gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: false, alpha: true, premultipliedAlpha: true });
+if (!gl) throw new Error('Failed to get WebGL2 context');
 
 
 // Create simulator for flow field
