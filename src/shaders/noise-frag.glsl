@@ -24,7 +24,7 @@ void main() {
   // Square, fixed scale, and centered
   vec2 xy = (coord - u_resolution * 0.5) / (500. * u_screen_dpr);
   // Fixed offset because the (0, 0) center looks too symmetrical
-  xy += vec2(17, 20);
+  vec2 center = vec2(17, 20);
 
   // Construct noise
   float value = 0.;
@@ -32,12 +32,12 @@ void main() {
   float this_amplitude = u_amplitude;
   float this_frequency = u_frequency;
   for (int i = 0; i < u_harmonics; i++) {
-    value += this_amplitude * clamp(cnoise(vec3(xy * this_frequency, u_time * u_speed)), -1., 1.);
+    value += this_amplitude * clamp(cnoise(vec3(xy * this_frequency + center, u_time * u_speed)), -1., 1.);
     total_amplitude += this_amplitude;
 
     this_frequency *= u_harmonic_spread;
     this_amplitude *= u_harmonic_gain;
-    xy += u_harmonic_travel;
+    center += u_harmonic_travel;
   }
   // Now, noise may range from -total_amplitude to total_amplitude
   // we need to map this range to 0 to 65535

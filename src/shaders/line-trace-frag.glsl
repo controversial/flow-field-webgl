@@ -51,7 +51,7 @@ void main() {
   } else {
     vec2 predecessor_position = vec2(predecessor_position_raw) / 65535.0;
     float field_value = sampleFieldBilinear(predecessor_position * u_resolution);
-    float angle = 2.0 * 3.1415926535 * field_value;
+    float angle = 2.0 * 3.1415926535 * (field_value + 0.25); // add 0.25 to rotate by 90deg, so that 0 is up
     float dx = cos(angle) * u_step_size;
     float dy = sin(angle) * u_step_size;
 
