@@ -71,6 +71,12 @@ const performanceFolder = pane.addFolder({ title: 'Performance' });
 const fpsGraph = performanceFolder.addBlade({ view: 'fpsgraph', label: 'FPS', interval: 500, min: 0, max: 150 } satisfies FpsGraphBladeParams) as FpsGraphBladeApi;
 renderer.beforeFrameSteps.unshift(() => fpsGraph.begin());
 renderer.renderSteps.push(() => fpsGraph.end());
+// Timers
+performanceFolder.addMonitor(
+  { get value() { return `Trace: ${lineField.timers.trace.summary}\nDraw: ${lineField.timers.draw.summary}\nFrame: ${renderer.renderTimer.summary}`; } },
+  'value',
+  { label: 'Timers', interval: 500, multiline: true, lineCount: 3.4 },
+);
 // Memory
 const memoryMonitor = new MemoryMonitor();
 if (memoryMonitor.supported) {
