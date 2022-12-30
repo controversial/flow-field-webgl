@@ -39,7 +39,7 @@ import type { FpsGraphBladeParams } from '@tweakpane/plugin-essentials/dist/type
 import type { FpsGraphBladeApi } from '@tweakpane/plugin-essentials/dist/types/fps-graph/api/fps-graph';
 import MemoryMonitor from './utils/memory';
 
-const pane = new Pane();
+const pane = new Pane({ title: 'Settings' });
 pane.registerPlugin(EssentialsPlugin);
 
 // Set up “lines” folder
