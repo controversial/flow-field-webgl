@@ -8,6 +8,7 @@ export default defineConfig({
 
   // Enable high-resolution timers for performance measuring (see https://web.dev/coop-coep/)
   server: {
+    host: true,
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',

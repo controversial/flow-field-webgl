@@ -194,7 +194,7 @@ export default class LineField {
     const fieldTexture = gl.createTexture();
     if (!fieldTexture) throw new Error('couldn’t create texture');
     gl.bindTexture(gl.TEXTURE_2D, fieldTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(width * height).fill(0));
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -446,7 +446,7 @@ export default class LineField {
     // Activate texture
     gl.bindTexture(gl.TEXTURE_2D, this.textures.field);
     // Resize texture
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(width * height));
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, null);
     // Clean up
     gl.bindTexture(gl.TEXTURE_2D, null);
     // Update number of lines to match density

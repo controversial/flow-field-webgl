@@ -93,6 +93,7 @@ export default class Renderer {
 
     // Prepare for drawing new frame
     const { gl } = this;
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.viewport(0, 0, this.width, this.height);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
