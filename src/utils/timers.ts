@@ -29,17 +29,22 @@ export abstract class MultiSampleTimer {
 
   /** Returns the average from all the samples */
   get time() {
-    return this.timings.reduce((a, b) => a + b, 0) / this.size;
+    if (!this.timings.length) return -1;
+    return this.timings.reduce((a, b) => a + b, 0) / this.timings.length;
   }
 
   /** Assumes timings are in milliseconds */
   get opsPerSecond() {
-    return 1000 / this.time;
+    const { time } = this;
+    if (time < 0) return -1;
+    return 1000 / time;
   }
 
   /** Assumes timings are in milliseconds */
   get summary() {
-    return `${this.time.toFixed(2)}ms / ${Math.round(this.opsPerSecond)} ops/sec`;
+    const { time, opsPerSecond } = this;
+    if (time < 0 || opsPerSecond < 0) return 'No data';
+    return `${time.toFixed(2)}ms = ${Math.round(opsPerSecond)} ops/sec`;
   }
 }
 
