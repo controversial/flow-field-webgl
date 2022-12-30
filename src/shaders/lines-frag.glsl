@@ -7,6 +7,7 @@ precision highp usampler2D;
 
 uniform usampler2D u_positions_texture; // 2-channel texture encoding the positions of each point along the line
 uniform vec2 u_resolution;
+uniform float u_screen_dpr;
 uniform float u_line_width;
 uniform float u_line_feather_width;
 uniform float u_line_alpha;
@@ -26,9 +27,9 @@ void main() {
   // Antialias the left and right edges of the line
   float tx = v_uv.x;
   float edge_distance = 0.5 - abs(tx - 0.5);
-  float adjusted_line_width = u_line_width + (u_line_feather_width / 2.) * 2.;
+  float adjusted_line_width = u_line_width + (u_line_feather_width / 2. / u_screen_dpr) * 2.;
   float edge_distance_px = edge_distance * adjusted_line_width;
-  float feather = smoothstep(0., u_line_feather_width, edge_distance_px);
+  float feather = smoothstep(0., u_line_feather_width / u_screen_dpr, edge_distance_px);
 
   // Draw a circular cap at the top end of the line
   float line_length_px = u_step_size * (float(u_num_line_points) - 1.);
@@ -37,7 +38,7 @@ void main() {
   vec2 pos_px = vec2(v_uv.x * adjusted_line_width, distance_from_end_px * 0.9);
   vec2 circle_cap_center = vec2(adjusted_line_width / 2.);
   float radius = adjusted_line_width / 2.;
-  float in_circle = 1. - smoothstep(radius - u_line_feather_width, radius, distance(pos_px, circle_cap_center));
+  float in_circle = 1. - smoothstep(radius - u_line_feather_width / u_screen_dpr, radius, distance(pos_px, circle_cap_center));
   float in_cap = 1. - step(radius, pos_px.y);
   float circle_mask = max(in_circle, 1. - in_cap);
 

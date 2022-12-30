@@ -28,7 +28,7 @@ void main() {
   int point_index = a_line_point;
 
   float orientation = float(a_normal); // this is either a left-side point or a right-side point of the thick line
-  float adjusted_line_width = u_line_width + (u_line_feather_width / 2.) * 2.; // to make line width appear the same after we feather the edges
+  float adjusted_line_width = u_line_width + (u_line_feather_width / 2. / u_screen_dpr) * 2.; // to make line width appear the same after we feather the edges
   vec2 px = 1. / u_resolution * u_screen_dpr; // normalized pixel size (equivalent across screens)
 
   // Sample 3 points from the line
