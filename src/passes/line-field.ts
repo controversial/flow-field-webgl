@@ -110,7 +110,7 @@ export default class LineField {
     /** How many lines to render? Can’t exceed GL_MAX_TEXTURE_SIZE */
     numLines: 1, // will be set by constructor to hit targetDensity
     /** desired number of lines per dpr-normalized pixel area */
-    targetDensity: 0.0025,
+    targetDensity: 0.0035,
     /** Seed for RNG that decides line start positions */
     seed: 'hello world',
     /** How many iterations we spend “relaxing” the line start positions */
@@ -452,7 +452,6 @@ export default class LineField {
     // Update number of lines to match density
     const newArea = (width / ctx.dpr) * (height / ctx.dpr);
     const newNumLines = Math.round(newArea * this.settings.targetDensity);
-    console.log(this.numLines, newNumLines);
     this.numLines = Math.min(newNumLines, gl.getParameter(gl.MAX_TEXTURE_SIZE));
   }
 
@@ -475,7 +474,6 @@ export default class LineField {
     this.textures.positions = positionsTextures[0];
     this.textures._tempPositions = positionsTextures[1];
     this.settings.numLines = value;
-    console.log('setting numLines', value);
     this.settings.targetDensity = this.settings.numLines / this.canvasArea;
   }
 
