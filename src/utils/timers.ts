@@ -3,6 +3,7 @@ export abstract class MultiSampleTimer {
   private timings: number[] = [];
   private pointer = 0;
   private _size: number;
+  abstract supported: boolean;
 
   constructor(size = 120) {
     this._size = size;
@@ -53,6 +54,7 @@ export abstract class MultiSampleTimer {
 /** Timer for CPU operaitons using performance.now() */
 export class PerformanceTimer extends MultiSampleTimer {
   private startTime?: DOMHighResTimeStamp;
+  supported = true; // on all browsers we support
 
   start() { this.startTime = performance.now(); }
   stop() {

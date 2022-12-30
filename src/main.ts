@@ -72,11 +72,19 @@ const fpsGraph = performanceFolder.addBlade({ view: 'fpsgraph', label: 'FPS', in
 renderer.beforeFrameSteps.unshift(() => fpsGraph.begin());
 renderer.renderSteps.push(() => fpsGraph.end());
 // Timers
-performanceFolder.addMonitor(
-  { get value() { return `Trace: ${lineField.timers.trace.summary}\nDraw: ${lineField.timers.draw.summary}\nFrame: ${renderer.renderTimer.summary}`; } },
-  'value',
-  { label: 'Timers', interval: 500, multiline: true, lineCount: 3.4 },
-);
+const timers = {
+  Trace: lineField.timers.trace,
+  Draw: lineField.timers.draw,
+  Frame: renderer.renderTimer,
+};
+const supportedTimers = Object.entries(timers).filter(([, timer]) => timer.supported);
+if (supportedTimers.length > 0) {
+  performanceFolder.addMonitor(
+    { get value() { return supportedTimers.map(([label, timer]) => `${label}: ${timer.summary}`).join('\n'); } },
+    'value',
+    { label: 'Timers', interval: 500, multiline: true, lineCount: supportedTimers.length + 0.4 },
+  );
+}
 // Memory
 const memoryMonitor = new MemoryMonitor();
 if (memoryMonitor.supported) {
