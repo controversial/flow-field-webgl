@@ -1,18 +1,18 @@
-import { Program, UniformsDefinition, LooseUniformsDefinition } from '../utils/shader';
-import type { SceneContext } from '../renderer';
-import { MultiSampleTimer } from '../utils/timers';
-import { WebGLTimer } from '../utils/timers';
+import { Program, UniformsDefinition, LooseUniformsDefinition } from './utils/shader';
+import type { SceneContext } from './renderer';
+import { MultiSampleTimer } from './utils/timers';
+import { WebGLTimer } from './utils/timers';
 import alea from 'seedrandom/lib/alea';
 
 import { Delaunay } from 'd3-delaunay';
 import { polygonCentroid } from 'd3-polygon';
 
-import passthroughVertexSrc from '../shaders/passthrough-vert.glsl';
-import noiseFragmentSrc from '../shaders/noise-frag.glsl';
-import traceFragmentSrc from '../shaders/line-trace-frag.glsl';
+import passthroughVertexSrc from './shaders/passthrough-vert.glsl';
+import noiseFragmentSrc from './shaders/noise-frag.glsl';
+import traceFragmentSrc from './shaders/line-trace-frag.glsl';
 
-import linesVertexSrc from '../shaders/lines-vert.glsl';
-import linesFragmentSrc from '../shaders/lines-frag.glsl';
+import linesVertexSrc from './shaders/lines-vert.glsl';
+import linesFragmentSrc from './shaders/lines-frag.glsl';
 
 /** How much of the lines’ sides to antialias? in dpr-normalized pixels */
 const LINE_FEATHER_WIDTH = 2;

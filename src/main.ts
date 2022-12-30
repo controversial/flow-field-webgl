@@ -1,7 +1,7 @@
 import './style.scss';
 
 import Renderer, { SceneContext } from './renderer';
-import LineField from './passes/line-field';
+import LineField from './line-field';
 
 
 // Set up canvas
