@@ -19,6 +19,8 @@ flat in int v_line_index;
 
 out vec4 color;
 
+#define PI 3.1415926535
+
 
 void main() {
   // Antialias the left and right edges of the line
@@ -42,7 +44,8 @@ void main() {
 
   float base_alpha = u_line_alpha;
   float gradient = v_uv.y;
+  vec3 base_color = vec3(sin(v_origin_pos * PI / 2.), 1.);
 
-  color = vec4(1., 1., 1., base_alpha * gradient * min(feather, circle_mask));
+  color = vec4(base_color, base_alpha * gradient * min(feather, circle_mask));
   color.rgb *= color.a;
 }

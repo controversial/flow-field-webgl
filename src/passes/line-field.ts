@@ -122,7 +122,7 @@ export default class LineField {
     /** Line width in dpr-normalized pixels */
     lineWidth: 6,
     /** Line opacity */
-    lineAlpha: 0.25,
+    lineAlpha: 0.75,
     /** Noise parameters */
     noiseParams: structuredClone(DEFAULT_NOISE_PARAMS) as typeof DEFAULT_NOISE_PARAMS,
   };

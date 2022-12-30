@@ -16,6 +16,7 @@ in int a_line_point;
 
 flat out int v_line_index;
 out vec2 v_uv;
+out vec2 v_origin_pos;
 
 vec2 getPointPosition(int line_index, int point_index) {
   uvec2 position_raw = texelFetch(u_positions_texture, ivec2(line_index, point_index), 0).xy;
@@ -70,4 +71,5 @@ void main() {
     // How far up the line is this point?
     float(point_index) / float(u_num_line_points - 1)
   );
+  v_origin_pos = getPointPosition(line_index, 0);
 }
