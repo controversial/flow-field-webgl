@@ -77,6 +77,16 @@ export class WebGLTimer extends MultiSampleTimer {
       query: WebGLQuery;
     };
 
+  private started = false;
+  private stopped = false;
+
+  resultsCount = {
+    success: 0,
+    unavailable: 0,
+    disjoint: 0,
+    'null': 0,
+  };
+
   constructor(gl: WebGL2RenderingContext, size = 120) {
     super(size);
 
@@ -90,28 +100,40 @@ export class WebGLTimer extends MultiSampleTimer {
   }
 
   start() {
-    if (!this.state.supported) return;
+    if (!this.state.supported || this.started) return;
     const { gl } = this.state;
 
-    // Try to get the result from the previous query before we start a new query
-    const lastResult = this.retrieve();
-    if (lastResult !== -1) this.addMeasurement(lastResult / 1e6);
+    // Try to get the result from the previous query before we start a new query (only if we’ve done a start/stop at least once before)
+    if (this.stopped) {
+      const lastResult = this.retrieve();
+      if (lastResult !== -1) this.addMeasurement(lastResult / 1e6);
+    }
 
     gl.beginQuery(this.state.ext.TIME_ELAPSED_EXT, this.state.query);
+    this.started = true;
+    this.stopped = false;
   }
 
   stop() {
-    if (!this.state.supported) return;
+    if (!this.state.supported || this.stopped) return;
     const { gl } = this.state;
     gl.endQuery(this.state.ext.TIME_ELAPSED_EXT);
+    gl.flush();
+    this.stopped = true;
+    this.started = false;
   }
 
   retrieve() {
     if (!this.state.supported) return -1;
     const { gl } = this.state;
-    const available: GLboolean = gl.getQueryParameter(this.state.query, gl.QUERY_RESULT_AVAILABLE);
+
+    const available: GLboolean | null = gl.getQueryParameter(this.state.query, gl.QUERY_RESULT_AVAILABLE);
     const disjoint: GLboolean = gl.getParameter(this.state.ext.GPU_DISJOINT_EXT);
-    if (!available || disjoint) return -1;
+
+    if (available == null) { this.resultsCount['null']++; return -1; }
+    if (!available) { this.resultsCount.unavailable++; return -1; }
+    if (disjoint) { this.resultsCount.disjoint++; return -1; }
+    this.resultsCount.success++;
 
     const result: GLint = gl.getQueryParameter(this.state.query, gl.QUERY_RESULT);
     return result;

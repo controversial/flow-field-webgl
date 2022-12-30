@@ -130,6 +130,7 @@ export default class LineField {
   timers: {
     trace: MultiSampleTimer,
     draw: MultiSampleTimer,
+    noise: MultiSampleTimer,
   };
 
 
@@ -329,6 +330,7 @@ export default class LineField {
     };
     // Creat timers
     this.timers = {
+      noise: new WebGLTimer(gl),
       trace: new WebGLTimer(gl),
       draw: new WebGLTimer(gl),
     };
@@ -355,6 +357,7 @@ export default class LineField {
     gl.disable(gl.BLEND);
 
     // Draw noise shader to field texture
+    if (ctx.canUseTimerQuery) this.timers.noise.start();
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.field, 0);
     this.programs.noise.use({
       resolution: { type: 'vec2', value: ctx.size },
@@ -365,9 +368,10 @@ export default class LineField {
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (ctx.canUseTimerQuery) this.timers.noise.stop();
 
     // Use trace shader to trace lines step by step
-    this.timers.trace.start();
+    if (ctx.canUseTimerQuery) this.timers.trace.start();
     this.programs.trace.use({
       resolution: { type: 'vec2', value: ctx.size },
       screenDpr: { type: 'float', value: ctx.dpr },
@@ -406,14 +410,14 @@ export default class LineField {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.disable(gl.SCISSOR_TEST);
     gl.enable(gl.BLEND);
-    this.timers.trace.stop();
+    if (ctx.canUseTimerQuery) this.timers.trace.stop();
   }
 
 
   /** Render the lines to the screen */
   draw(ctx: SceneContext) {
     const { gl } = this;
-    this.timers.draw.start();
+    if (ctx.canUseTimerQuery) this.timers.draw.start();
     gl.bindVertexArray(this.vaos.line);
 
     this.programs.lines.use({
@@ -429,7 +433,7 @@ export default class LineField {
     // Draw
     gl.viewport(0, 0, ctx.size[0], ctx.size[1]);
     gl.drawElementsInstanced(gl.TRIANGLES, (this.numLinePoints - 1) * 6, gl.UNSIGNED_SHORT, 0, this.numLines);
-    this.timers.draw.stop();
+    if (ctx.canUseTimerQuery) this.timers.draw.stop();
   }
 
 

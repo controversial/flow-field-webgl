@@ -7,6 +7,8 @@ export interface SceneContext {
   gl: WebGL2RenderingContext;
   size: [number, number],
   time: number,
+  frameCount: number,
+  canUseTimerQuery: boolean,
   dpr: number,
 }
 
@@ -31,6 +33,7 @@ export default class Renderer {
   resizeObserver: ResizeObserver;
   raf?: ReturnType<typeof requestAnimationFrame>;
   startTime?: DOMHighResTimeStamp;
+  frameCount = 0;
   eventListeners: EventListenersRecord = {};
   resizeListeners: ((ctx: SceneContext) => void)[] = [];
 
@@ -79,14 +82,18 @@ export default class Renderer {
       canvas: this.canvas,
       gl: this.gl,
       size: [this.width, this.height],
-      time: this.startTime ? (performance.now() - this.startTime) : -1,
       dpr: window.devicePixelRatio ?? 1,
+      time: this.startTime ? (performance.now() - this.startTime) : -1,
+      frameCount: this.frameCount,
+      // on even frames, the renderer uses the timer query; on odd frames it allows child steps to use it.
+      canUseTimerQuery: this.frameCount % 2 === 1,
     };
   }
 
   /** Draw a single frame */
   draw(delta: DOMHighResTimeStamp) {
-    this.renderTimer.start();
+    const weCanUseTimerQuery = this.frameCount % 2 === 0; // opposite of sceneContext.canUseTimerQuery, which dictates permission for child steps
+    if (weCanUseTimerQuery) this.renderTimer.start();
     const context = this.sceneContext;
     // Do setup steps
     this.beforeFrameSteps.forEach((step) => step(context, delta));
@@ -102,14 +109,15 @@ export default class Renderer {
 
     // Do render steps
     this.renderSteps.forEach((step) => step(context, delta));
-    this.renderTimer.stop();
+    if (weCanUseTimerQuery) this.renderTimer.stop();
   }
 
   /** Start render loop */
   start() {
-    const now = performance.now();
-    this.startTime = now;
-    let previousTime = now;
+    this.stop();
+    this.startTime = performance.now();
+    let previousTime = this.startTime;
+    this.frameCount = 0;
 
     const frame = (time: DOMHighResTimeStamp) => {
       const delta = time - previousTime;
@@ -117,6 +125,7 @@ export default class Renderer {
 
       this.draw(delta);
 
+      this.frameCount += 1;
       this.raf = requestAnimationFrame(frame);
     };
     this.raf = requestAnimationFrame(frame);

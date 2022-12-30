@@ -73,9 +73,10 @@ renderer.beforeFrameSteps.unshift(() => fpsGraph.begin());
 renderer.renderSteps.push(() => fpsGraph.end());
 // Timers
 const timers = {
-  Trace: lineField.timers.trace,
-  Draw: lineField.timers.draw,
-  Frame: renderer.renderTimer,
+  '      Noise': lineField.timers.noise,
+  '      Trace': lineField.timers.trace,
+  '      Lines': lineField.timers.draw,
+  'Full render': renderer.renderTimer,
 };
 const supportedTimers = Object.entries(timers).filter(([, timer]) => timer.supported);
 if (supportedTimers.length > 0) {
