@@ -16,11 +16,13 @@ if (!gl) throw new Error('Failed to get WebGL2 context');
 // Create simulator for flow field
 
 const lineField = new LineField(gl);
+window.lineField = lineField;
 
 
 // Set up render pipeline
 
 const renderer = new Renderer(canvas, gl);
+window.renderer = renderer;
 
 renderer.addRenderStep((ctx: SceneContext) => lineField.update(ctx), true);
 renderer.addRenderStep((ctx: SceneContext) => lineField.draw(ctx));

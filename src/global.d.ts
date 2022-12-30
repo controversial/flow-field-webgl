@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+import type LineField from './passes/line-field';
+import type Renderer from './renderer';
+
 declare module '*.glsl' {
   const value: string;
   export default value;
@@ -25,4 +28,11 @@ interface ObjectConstructor {
   // I think this produces correct results in all cases
   fromEntries<K extends string, V>(entries: Iterable<readonly [K, V]>): Record<K, V>;
   // 2 overloads from typescript core are preserved
+}
+
+declare global {
+  interface Window {
+    lineField: LineField;
+    renderer: Renderer;
+  }
 }
