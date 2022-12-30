@@ -61,3 +61,64 @@ export class PerformanceTimer extends MultiSampleTimer {
     this.addMeasurement(endTime - this.startTime);
   }
 }
+
+
+
+/** Timer for GPU operations using WebGL queries */
+export class WebGLTimer extends MultiSampleTimer {
+  state:
+    | { supported: false }
+    | {
+      supported: true;
+      gl: WebGL2RenderingContext;
+      ext: WebGLTimerQueryExt;
+      query: WebGLQuery;
+    };
+
+  constructor(gl: WebGL2RenderingContext, size = 120) {
+    super(size);
+
+    const ext: WebGLTimerQueryExt | null = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+    if (!ext) { this.state = { supported: false }; return; }
+
+    const query = gl.createQuery();
+    if (!query) { this.state = { supported: false }; return; }
+
+    this.state = { supported: true, gl, ext, query };
+  }
+
+  start() {
+    if (!this.state.supported) return;
+    const { gl } = this.state;
+
+    // Try to get the result from the previous query before we start a new query
+    const lastResult = this.retrieve();
+    if (lastResult !== -1) this.addMeasurement(lastResult / 1e6);
+
+    gl.beginQuery(this.state.ext.TIME_ELAPSED_EXT, this.state.query);
+  }
+
+  stop() {
+    if (!this.state.supported) return;
+    const { gl } = this.state;
+    gl.endQuery(this.state.ext.TIME_ELAPSED_EXT);
+  }
+
+  retrieve() {
+    if (!this.state.supported) return -1;
+    const { gl } = this.state;
+    const available: GLboolean = gl.getQueryParameter(this.state.query, gl.QUERY_RESULT_AVAILABLE);
+    const disjoint: GLboolean = gl.getParameter(this.state.ext.GPU_DISJOINT_EXT);
+    if (!available || disjoint) return -1;
+
+    const result: GLint = gl.getQueryParameter(this.state.query, gl.QUERY_RESULT);
+    return result;
+  }
+
+  get supported() { return this.state.supported; }
+}
+
+type WebGLTimerQueryExt = {
+  TIME_ELAPSED_EXT: Parameters<WebGL2RenderingContext['beginQuery']>[0],
+  GPU_DISJOINT_EXT: Parameters<WebGL2RenderingContext['getParameter']>[0],
+};
