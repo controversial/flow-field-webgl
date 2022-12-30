@@ -1,6 +1,7 @@
 import { Program, UniformsDefinition, LooseUniformsDefinition } from '../utils/shader';
 import type { SceneContext } from '../renderer';
-import { PerformanceTimer } from '../utils/timers';
+import { MultiSampleTimer } from '../utils/timers';
+import { WebGLTimer } from '../utils/timers';
 import alea from 'seedrandom/lib/alea';
 
 import { Delaunay } from 'd3-delaunay';
@@ -126,9 +127,9 @@ export default class LineField {
     noiseParams: structuredClone(DEFAULT_NOISE_PARAMS) as typeof DEFAULT_NOISE_PARAMS,
   };
 
-  timers = {
-    trace: new PerformanceTimer(),
-    draw: new PerformanceTimer(),
+  timers: {
+    trace: MultiSampleTimer,
+    draw: MultiSampleTimer,
   };
 
 
@@ -325,6 +326,11 @@ export default class LineField {
     this.vaos = {
       fullscreen: this.generateFullscreenVAO(this.programs.noise, this.programs.trace),
       line: this.generateLineVAO(this.programs.lines, this.settings.numLinePoints),
+    };
+    // Creat timers
+    this.timers = {
+      trace: new WebGLTimer(gl),
+      draw: new WebGLTimer(gl),
     };
   }
 

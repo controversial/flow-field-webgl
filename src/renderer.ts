@@ -1,4 +1,5 @@
-import { PerformanceTimer } from './utils/timers';
+import type { MultiSampleTimer } from './utils/timers';
+import { WebGLTimer } from './utils/timers';
 
 
 export interface SceneContext {
@@ -33,7 +34,7 @@ export default class Renderer {
   eventListeners: EventListenersRecord = {};
   resizeListeners: ((ctx: SceneContext) => void)[] = [];
 
-  renderTimer: PerformanceTimer;
+  renderTimer: MultiSampleTimer;
 
   // Rendering is split into “steps”
   beforeFrameSteps: RenderStep[] = [];
@@ -48,7 +49,7 @@ export default class Renderer {
     this.resizeObserver.observe(this.canvas);
 
     // Observability
-    this.renderTimer = new PerformanceTimer();
+    this.renderTimer = new WebGLTimer(gl);
   }
 
 
