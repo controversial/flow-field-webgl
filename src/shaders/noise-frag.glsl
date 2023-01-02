@@ -6,7 +6,6 @@ precision highp int;
 #include "./noise.glsl"
 
 uniform vec2 u_resolution;
-uniform float u_screen_dpr;
 uniform float u_time;
 
 uniform float u_frequency;
@@ -22,7 +21,7 @@ out uint final_value;
 void main() {
   vec2 coord = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
   // Square, fixed scale, and centered
-  vec2 xy = (coord - u_resolution * 0.5) / (500. * u_screen_dpr);
+  vec2 xy = (coord - u_resolution * 0.5) / 500.;
   // Fixed offset because the (0, 0) center looks too symmetrical
   vec2 center = vec2(17, 20);
 

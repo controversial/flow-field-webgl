@@ -32,7 +32,6 @@ const DEFAULT_NOISE_PARAMS = {
 const NOISE_PROGRAM_ATTRIBUTES = ['position'] as const;
 const NOISE_PROGRAM_UNIFORMS = {
   time: { type: 'float' },
-  screenDpr: { type: 'float' },
   resolution: { type: 'vec2' },
   ...DEFAULT_NOISE_PARAMS,
 } satisfies LooseUniformsDefinition;
@@ -305,7 +304,8 @@ export default class LineField {
 
     // Initialize textures
     const positionsTextures = this.generatePositionsTextures(this.settings);
-    const fieldTexture = this.generateFieldTexture(gl.canvas.width, gl.canvas.height);
+    const dpr = window.devicePixelRatio ?? 1;
+    const fieldTexture = this.generateFieldTexture(gl.canvas.width / dpr, gl.canvas.height / dpr);
     this.textures = {
       field: fieldTexture,
       positions: positionsTextures[0],
@@ -360,8 +360,7 @@ export default class LineField {
     if (ctx.canUseTimerQuery) this.timers.noise.start();
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.field, 0);
     this.programs.noise.use({
-      resolution: { type: 'vec2', value: ctx.size },
-      screenDpr: { type: 'float', value: ctx.dpr },
+      resolution: { type: 'vec2', value: [ctx.size[0] / ctx.dpr, ctx.size[1] / ctx.dpr] },
       time: { type: 'float', value: ctx.time / 1000 },
       ...this.noiseParams satisfies Parameters<typeof this.programs.noise.use>[0],
     });
@@ -450,7 +449,7 @@ export default class LineField {
     // Activate texture
     gl.bindTexture(gl.TEXTURE_2D, this.textures.field);
     // Resize texture
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, width / ctx.dpr, height / ctx.dpr, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, null);
     // Clean up
     gl.bindTexture(gl.TEXTURE_2D, null);
     // Update number of lines to match density
@@ -459,14 +458,16 @@ export default class LineField {
     this.numLines = Math.min(newNumLines, gl.getParameter(gl.MAX_TEXTURE_SIZE));
   }
 
+  get canvasRect(): { width: number, height: number } {
+    const { gl } = this;
+    return (gl.canvas instanceof HTMLCanvasElement)
+      ? gl.canvas.getBoundingClientRect() // for HTMLCanvasElement
+      : gl.canvas; // for OffscreenCanvas (we don’t use this in practice but it makes TS happy)
+  }
+
   /** Total number of pixels on the canvas */
   get canvasArea() {
-    const { gl } = this;
-    const canvasRect = (
-      (gl.canvas instanceof HTMLCanvasElement)
-        ? gl.canvas.getBoundingClientRect() // for HTMLCanvasElement
-        : gl.canvas // for OffscreenCanvas (we don’t use this in practice but it makes TS happy)
-    ) satisfies { width: number; height: number; }; // either value has width/height properties
+    const { canvasRect } = this;
     return canvasRect.width * canvasRect.height;
   }
 
