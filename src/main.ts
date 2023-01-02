@@ -39,8 +39,10 @@ import type { FpsGraphBladeParams } from '@tweakpane/plugin-essentials/dist/type
 import type { FpsGraphBladeApi } from '@tweakpane/plugin-essentials/dist/types/fps-graph/api/fps-graph';
 import MemoryMonitor from './utils/memory';
 
-const pane = new Pane({ title: 'Settings' });
+const pane = new Pane({ title: 'Flow Field' });
 pane.registerPlugin(EssentialsPlugin);
+
+pane.addButton({ label: 'source', title: 'GitHub' }).on('click', () => window.open('https://github.com/controversial/flow-field-webgl'));
 
 // Set up “lines” folder
 
