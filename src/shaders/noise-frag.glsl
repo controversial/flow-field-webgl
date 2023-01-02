@@ -3,7 +3,7 @@
 precision highp float;
 precision highp int;
 
-#include "./lygia/generative/cnoise.glsl"
+#include "./noise.glsl"
 
 uniform vec2 u_resolution;
 uniform float u_screen_dpr;
@@ -32,7 +32,8 @@ void main() {
   float this_amplitude = u_amplitude;
   float this_frequency = u_frequency;
   for (int i = 0; i < u_harmonics; i++) {
-    value += this_amplitude * clamp(cnoise(vec3(xy * this_frequency + center, u_time * u_speed)), -1., 1.);
+    vec3 sample_pos = vec3(xy * this_frequency + center, u_time * u_speed);
+    value += this_amplitude * Perlin3D(sample_pos);
     total_amplitude += this_amplitude;
 
     this_frequency *= u_harmonic_spread;
